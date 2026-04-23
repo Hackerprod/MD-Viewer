@@ -1,0 +1,445 @@
+<Window x:Class="MDViewer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:avEdit="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"
+        Title="MD Viewer" Height="780" Width="1100"
+        MinWidth="400" MinHeight="300"
+        Icon="Icon.ico"
+        Background="{DynamicResource BgApp}"
+        AllowDrop="True"
+        Drop="Window_Drop"
+        DragOver="Window_DragOver"
+        PreviewKeyDown="Window_KeyDown">
+
+  <Window.Resources>
+
+    <!-- ══ Drop shadow for popup menus ══════════════════════════════════ -->
+    <DropShadowEffect x:Key="PopupShadow" BlurRadius="12" ShadowDepth="4"
+                      Opacity="0.55" Color="Black" Direction="270"/>
+
+    <!-- ══ Top-level menu item template ════════════════════════════════ -->
+    <ControlTemplate x:Key="TopLevelMenuItemTemplate" TargetType="MenuItem">
+      <Grid>
+        <Border x:Name="bd" Background="Transparent"
+                Padding="10,5" Margin="1,3" CornerRadius="4">
+          <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"
+                            VerticalAlignment="Center"
+                            TextElement.Foreground="{DynamicResource FgBar}"
+                            TextElement.FontSize="13"/>
+        </Border>
+        <Popup x:Name="PART_Popup"
+               AllowsTransparency="True" Focusable="False"
+               IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
+               Placement="Bottom" VerticalOffset="0"
+               PopupAnimation="None">
+          <Border Background="{DynamicResource BgPopup}"
+                  BorderBrush="{DynamicResource BorderSubtle}" BorderThickness="1"
+                  CornerRadius="0,0,6,6" Padding="4,5"
+                  MinWidth="190" Effect="{StaticResource PopupShadow}">
+            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
+                            KeyboardNavigation.TabNavigation="Cycle"/>
+          </Border>
+        </Popup>
+      </Grid>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsHighlighted" Value="True">
+          <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgMenuHover}"/>
+          <Setter TargetName="bd" Property="TextElement.Foreground" Value="{DynamicResource FgContent}"/>
+        </Trigger>
+        <Trigger Property="IsSubmenuOpen" Value="True">
+          <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgMenuHover}"/>
+          <Setter TargetName="bd" Property="TextElement.Foreground" Value="{DynamicResource FgContent}"/>
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- ══ Submenu item template ════════════════════════════════════════ -->
+    <ControlTemplate x:Key="SubMenuItemTemplate" TargetType="MenuItem">
+      <Border x:Name="bd" Background="Transparent"
+              Margin="4,1" Padding="6,5" CornerRadius="4">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="20"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+          </Grid.ColumnDefinitions>
+
+          <TextBlock x:Name="check" Grid.Column="0"
+                     Text="✓" FontSize="11"
+                     Foreground="{DynamicResource Accent}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Visibility="Collapsed"/>
+
+          <ContentPresenter Grid.Column="1" ContentSource="Header"
+                            RecognizesAccessKey="True" VerticalAlignment="Center"
+                            Margin="4,0,20,0"
+                            TextElement.Foreground="{DynamicResource FgBar}"
+                            TextElement.FontSize="13"/>
+
+          <TextBlock Grid.Column="2"
+                     Text="{TemplateBinding InputGestureText}"
+                     Foreground="{DynamicResource FgMuted}" FontSize="11"
+                     VerticalAlignment="Center" Margin="0,0,4,0"/>
+        </Grid>
+      </Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="IsHighlighted" Value="True">
+          <Setter TargetName="bd" Property="Background" Value="{DynamicResource Selection}"/>
+          <Setter TargetName="bd" Property="TextElement.Foreground" Value="White"/>
+        </Trigger>
+        <Trigger Property="IsChecked" Value="True">
+          <Setter TargetName="check" Property="Visibility" Value="Visible"/>
+        </Trigger>
+        <Trigger Property="IsEnabled" Value="False">
+          <Setter Property="Opacity" Value="0.35"/>
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+
+    <!-- ══ MenuItem implicit style ══════════════════════════════════════ -->
+    <Style TargetType="MenuItem">
+      <Setter Property="Foreground"      Value="{DynamicResource FgBar}"/>
+      <Setter Property="Background"      Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Template"        Value="{StaticResource SubMenuItemTemplate}"/>
+      <Style.Triggers>
+        <Trigger Property="Role" Value="TopLevelHeader">
+          <Setter Property="Template" Value="{StaticResource TopLevelMenuItemTemplate}"/>
+        </Trigger>
+        <Trigger Property="Role" Value="TopLevelItem">
+          <Setter Property="Template" Value="{StaticResource TopLevelMenuItemTemplate}"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <!-- ══ Separator inside menus ═══════════════════════════════════════ -->
+    <Style TargetType="Separator">
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Separator">
+            <Rectangle Height="1" Fill="{DynamicResource BorderSubtle}" Margin="8,4"/>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ══ Tab switch button ════════════════════════════════════════════ -->
+    <Style x:Key="TabSwitchStyle" TargetType="Button">
+      <Setter Property="Background"       Value="Transparent"/>
+      <Setter Property="BorderThickness"  Value="0"/>
+      <Setter Property="Cursor"           Value="Hand"/>
+      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Grid>
+              <Rectangle x:Name="accent" Height="2" VerticalAlignment="Top" Fill="Transparent"/>
+              <Border x:Name="bg" Background="Transparent" Margin="0,2,0,0">
+                <ContentPresenter VerticalAlignment="Center" Margin="10,0,0,0"/>
+              </Border>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bg" Property="Background" Value="{DynamicResource BgTabHover}"/>
+              </Trigger>
+              <DataTrigger Binding="{Binding IsActive}" Value="True">
+                <Setter TargetName="accent" Property="Fill"       Value="{DynamicResource Accent}"/>
+                <Setter TargetName="bg"     Property="Background" Value="{DynamicResource BgTabActive}"/>
+              </DataTrigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ══ Tab × close button ═══════════════════════════════════════════ -->
+    <Style x:Key="TabCloseStyle" TargetType="Button">
+      <Setter Property="Content"          Value="✕"/>
+      <Setter Property="FontSize"         Value="9"/>
+      <Setter Property="Width"            Value="16"/>
+      <Setter Property="Height"           Value="16"/>
+      <Setter Property="Foreground"       Value="{DynamicResource FgMuted}"/>
+      <Setter Property="Background"       Value="Transparent"/>
+      <Setter Property="BorderThickness"  Value="0"/>
+      <Setter Property="Cursor"           Value="Hand"/>
+      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="3">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgMenuHover}"/>
+                <Setter Property="Foreground" Value="{DynamicResource FgContent}"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{DynamicResource Selection}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ══ Tab DataTemplate ══════════════════════════════════════════════ -->
+    <DataTemplate x:Key="TabTemplate">
+      <Grid MinWidth="90" MaxWidth="210" Height="36"
+            ToolTip="{Binding FilePath}"
+            MouseDown="Tab_MouseDown">
+        <Button Style="{StaticResource TabSwitchStyle}" Click="Tab_Click">
+          <TextBlock Text="{Binding DisplayTitle}"
+                     Margin="0,0,28,0"
+                     TextTrimming="CharacterEllipsis"
+                     FontSize="12" VerticalAlignment="Center">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource FgMuted}"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsActive}" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource FgContent}"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+        </Button>
+        <Button HorizontalAlignment="Right" Margin="0,0,4,0"
+                Style="{StaticResource TabCloseStyle}"
+                Tag="{Binding}" Click="CloseTab_Click"/>
+      </Grid>
+    </DataTemplate>
+
+    <!-- ══ Search bar icon button ════════════════════════════════════════ -->
+    <Style x:Key="SearchBtn" TargetType="Button">
+      <Setter Property="Background"       Value="Transparent"/>
+      <Setter Property="Foreground"       Value="{DynamicResource FgMuted}"/>
+      <Setter Property="BorderThickness"  Value="0"/>
+      <Setter Property="Width"            Value="28"/>
+      <Setter Property="Height"           Value="28"/>
+      <Setter Property="FontSize"         Value="14"/>
+      <Setter Property="Cursor"           Value="Hand"/>
+      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{DynamicResource BgMenuHover}"/>
+                <Setter Property="Foreground" Value="{DynamicResource FgContent}"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="bd" Property="Background" Value="{DynamicResource Selection}"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.3"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+  </Window.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>   <!-- 0: Menu bar   -->
+      <RowDefinition Height="Auto"/>   <!-- 1: Tab strip  -->
+      <RowDefinition Height="*"/>      <!-- 2: Content    -->
+      <RowDefinition Height="Auto"/>   <!-- 3: Search bar -->
+      <RowDefinition Height="Auto"/>   <!-- 4: Status bar -->
+    </Grid.RowDefinitions>
+
+    <!-- ══════════════════ MENU BAR ═════════════════════════════════════ -->
+    <Menu Grid.Row="0"
+          Background="{DynamicResource BgBar}"
+          BorderBrush="{DynamicResource BorderMain}"
+          BorderThickness="0,0,0,1"
+          Padding="4,0">
+
+      <MenuItem Header="File">
+        <MenuItem Header="Open…"              InputGestureText="Ctrl+O"       Click="BtnOpen_Click"/>
+        <Separator/>
+        <MenuItem x:Name="MenuReload"
+                  Header="Reload"             InputGestureText="F5"
+                  IsEnabled="False"           Click="MenuReload_Click"/>
+        <Separator/>
+        <MenuItem x:Name="MenuCloseTab"
+                  Header="Close Tab"          InputGestureText="Ctrl+W"
+                  IsEnabled="False"           Click="MenuCloseTab_Click"/>
+        <Separator/>
+        <MenuItem Header="Exit"               InputGestureText="Alt+F4"       Click="MenuExit_Click"/>
+      </MenuItem>
+
+      <MenuItem Header="Edit">
+        <MenuItem x:Name="MenuEditMode"
+                  Header="Edit Mode"          InputGestureText="Ctrl+E"
+                  IsCheckable="True"          IsEnabled="False"
+                  Click="MenuEditMode_Click"/>
+        <Separator/>
+        <MenuItem x:Name="MenuSave"
+                  Header="Save"               InputGestureText="Ctrl+S"
+                  IsEnabled="False"           Click="MenuSave_Click"/>
+        <MenuItem x:Name="MenuSaveAs"
+                  Header="Save As…"           InputGestureText="Ctrl+Shift+S"
+                  IsEnabled="False"           Click="MenuSaveAs_Click"/>
+      </MenuItem>
+
+      <MenuItem Header="View">
+        <MenuItem x:Name="MenuDark"
+                  Header="Dark Theme"         InputGestureText="Ctrl+D"
+                  IsCheckable="True"          IsChecked="True"
+                  Click="MenuTheme_Click"/>
+        <Separator/>
+        <MenuItem Header="Full Screen"        InputGestureText="F11"          Click="MenuFullscreen_Click"/>
+      </MenuItem>
+
+      <MenuItem Header="Find">
+        <MenuItem Header="Find in Document…"  InputGestureText="Ctrl+F"       Click="MenuSearch_Click"/>
+        <MenuItem x:Name="MenuSearchNext"
+                  Header="Find Next"          InputGestureText="F3"
+                  IsEnabled="False"           Click="MenuSearchNext_Click"/>
+        <MenuItem x:Name="MenuSearchPrev"
+                  Header="Find Previous"      InputGestureText="Shift+F3"
+                  IsEnabled="False"           Click="MenuSearchPrev_Click"/>
+      </MenuItem>
+
+      <MenuItem Header="Tools">
+        <MenuItem Header="Associate .md Files"                                 Click="BtnAssociate_Click"/>
+        <Separator/>
+        <MenuItem Header="Open Data Folder"                                    Click="MenuOpenDataFolder_Click"/>
+      </MenuItem>
+
+    </Menu>
+
+    <!-- ══════════════════ TAB STRIP ════════════════════════════════════ -->
+    <Border Grid.Row="1"
+            Background="{DynamicResource BgApp}"
+            BorderBrush="{DynamicResource BorderMain}"
+            BorderThickness="0,0,0,1">
+      <ScrollViewer x:Name="TabScrollViewer"
+                    HorizontalScrollBarVisibility="Hidden"
+                    VerticalScrollBarVisibility="Disabled"
+                    PreviewMouseWheel="TabStrip_MouseWheel">
+        <ItemsControl ItemsSource="{Binding Tabs, RelativeSource={RelativeSource AncestorType=Window}}"
+                      ItemTemplate="{StaticResource TabTemplate}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+
+    <!-- ══════════════════ EDITOR + PREVIEW ═════════════════════════════ -->
+    <Grid x:Name="EditorPreviewGrid" Grid.Row="2">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="0"/>    <!-- 0: editor   -->
+        <ColumnDefinition Width="Auto"/> <!-- 1: splitter -->
+        <ColumnDefinition Width="*"/>    <!-- 2: preview  -->
+      </Grid.ColumnDefinitions>
+
+      <!-- ── Markdown Editor (AvalonEdit) ─────────────────────────────── -->
+      <avEdit:TextEditor
+          x:Name="MarkdownEditor"
+          Grid.Column="0"
+          FontFamily="Cascadia Code, Cascadia Mono, Consolas, Courier New"
+          FontSize="14"
+          ShowLineNumbers="True"
+          WordWrap="True"
+          Background="{DynamicResource BgApp}"
+          Foreground="{DynamicResource FgContent}"
+          LineNumbersForeground="{DynamicResource FgMuted}"
+          BorderThickness="0"
+          Padding="8"/>
+
+      <!-- ── Resizable divider ─────────────────────────────────────────── -->
+      <GridSplitter x:Name="EditorSplitter"
+                    Grid.Column="1"
+                    Width="5"
+                    HorizontalAlignment="Stretch"
+                    Background="{DynamicResource BorderMain}"
+                    Visibility="Collapsed"/>
+
+      <!-- ── Preview (WebView + drag overlay) ─────────────────────────── -->
+      <Grid Grid.Column="2">
+        <wv2:WebView2 x:Name="WebView" DefaultBackgroundColor="Transparent"/>
+        <Border x:Name="DragOverlay"
+                Visibility="Collapsed"
+                Background="#CC0D1117"
+                IsHitTestVisible="False">
+          <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center"/>
+            <TextBlock Text="Drop .md files here"
+                       Foreground="White" FontSize="20" FontWeight="Bold"
+                       HorizontalAlignment="Center" Margin="0,12,0,0"/>
+          </StackPanel>
+        </Border>
+      </Grid>
+    </Grid>
+
+    <!-- ══════════════════ SEARCH BAR ════════════════════════════════════ -->
+    <Border x:Name="SearchBar"
+            Grid.Row="3"
+            Visibility="Collapsed"
+            Background="{DynamicResource BgBar}"
+            BorderBrush="{DynamicResource BorderMain}"
+            BorderThickness="0,1,0,1"
+            Padding="8,5">
+      <DockPanel LastChildFill="True">
+
+        <Button DockPanel.Dock="Right" Style="{StaticResource SearchBtn}"
+                Click="SearchClose_Click" ToolTip="Close (Esc)">✕</Button>
+        <Button DockPanel.Dock="Right" Style="{StaticResource SearchBtn}"
+                x:Name="BtnSearchPrev" IsEnabled="False"
+                Click="SearchPrev_Click" ToolTip="Previous (Shift+F3)">↑</Button>
+        <Button DockPanel.Dock="Right" Style="{StaticResource SearchBtn}"
+                x:Name="BtnSearchNext" IsEnabled="False"
+                Click="SearchNext_Click" ToolTip="Next (F3)">↓</Button>
+
+        <TextBlock x:Name="SearchCount"
+                   DockPanel.Dock="Right"
+                   Foreground="{DynamicResource FgMuted}" FontSize="12"
+                   VerticalAlignment="Center"
+                   Margin="6,0" MinWidth="50" TextAlignment="Right"/>
+
+        <TextBox x:Name="SearchBox"
+                 Background="{DynamicResource BgApp}"
+                 Foreground="{DynamicResource FgContent}"
+                 CaretBrush="{DynamicResource FgContent}"
+                 SelectionBrush="{DynamicResource Selection}"
+                 BorderBrush="{DynamicResource BorderSubtle}"
+                 BorderThickness="1"
+                 Padding="8,5" FontSize="13"
+                 VerticalContentAlignment="Center"
+                 MinWidth="220" MaxWidth="380"
+                 HorizontalAlignment="Left"
+                 TextChanged="SearchBox_TextChanged"
+                 KeyDown="SearchBox_KeyDown"/>
+      </DockPanel>
+    </Border>
+
+    <!-- ══════════════════ STATUS BAR ════════════════════════════════════ -->
+    <Border Grid.Row="4"
+            Background="{DynamicResource BgBar}"
+            BorderBrush="{DynamicResource BorderMain}"
+            BorderThickness="0,1,0,0"
+            Height="22">
+      <TextBlock x:Name="TxtFilePath"
+                 Text="Drag a .md file or use File → Open"
+                 Foreground="{DynamicResource FgMuted}"
+                 FontSize="11"
+                 VerticalAlignment="Center"
+                 Margin="10,0"
+                 TextTrimming="CharacterEllipsis"/>
+    </Border>
+
+  </Grid>
+</Window>

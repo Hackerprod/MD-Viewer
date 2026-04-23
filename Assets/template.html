@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es" class="{{DARK_CLASS}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{TITLE}}</title>
+<style>
+/* ─── Reset & Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #ffffff;
+  --bg-code:     #f6f8fa;
+  --bg-pre:      #f6f8fa;
+  --bg-table-h:  #f6f8fa;
+  --bg-table-a:  #ffffff;
+  --bg-table-b:  #f6f8fa;
+  --border:      #d0d7de;
+  --fg:          #1f2328;
+  --fg-muted:    #636c76;
+  --link:        #0969da;
+  --link-hover:  #0550ae;
+  --quote-border:#0969da;
+  --quote-bg:    #ddf4ff;
+  --hr:          #d0d7de;
+  --h-border:    #d0d7de;
+  --kbd-bg:      #f6f8fa;
+  --kbd-border:  #c1c7cd;
+  --mark-bg:     #fff8c5;
+  --ins-bg:      #dafbe1;
+  --del-bg:      #ffebe9;
+  --scroll-thumb:#c0c0c0;
+  --scroll-track:#f0f0f0;
+  --shadow:      rgba(0,0,0,.08);
+  --radius:      6px;
+  --font-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:   ui-monospace, "Cascadia Code", "Fira Code", Consolas, "Courier New", monospace;
+  --transition:  background-color .25s, color .25s;
+}
+
+html.dark {
+  --bg:          #0d1117;
+  --bg-code:     #161b22;
+  --bg-pre:      #161b22;
+  --bg-table-h:  #161b22;
+  --bg-table-a:  #0d1117;
+  --bg-table-b:  #161b22;
+  --border:      #30363d;
+  --fg:          #e6edf3;
+  --fg-muted:    #8b949e;
+  --link:        #58a6ff;
+  --link-hover:  #79c0ff;
+  --quote-border:#1f6feb;
+  --quote-bg:    #121d2f;
+  --hr:          #30363d;
+  --h-border:    #30363d;
+  --kbd-bg:      #161b22;
+  --kbd-border:  #30363d;
+  --mark-bg:     #b08800;
+  --ins-bg:      #04260f;
+  --del-bg:      #2d1116;
+  --scroll-thumb:#484f58;
+  --scroll-track:#0d1117;
+  --shadow:      rgba(0,0,0,.4);
+}
+
+html {
+  transition: var(--transition);
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--fg);
+  background: var(--bg);
+  transition: var(--transition);
+  padding: 48px 24px 80px;
+}
+
+/* ─── Layout ──────────────────────────────────────────────────────── */
+#content {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar              { width: 8px; height: 8px; }
+::-webkit-scrollbar-track        { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb        { background: var(--scroll-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--fg-muted); }
+
+/* ─── Headings ───────────────────────────────────────────────────── */
+h1,h2,h3,h4,h5,h6 {
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.8em;
+  margin-bottom: .6em;
+  color: var(--fg);
+  position: relative;
+}
+h1 { font-size: 2em;   padding-bottom: .35em; border-bottom: 2px solid var(--h-border); }
+h2 { font-size: 1.5em; padding-bottom: .3em;  border-bottom: 1px solid var(--h-border); }
+h3 { font-size: 1.25em; }
+h4 { font-size: 1.1em; }
+h5 { font-size: 1em; }
+h6 { font-size: .9em; color: var(--fg-muted); }
+
+/* Anchor links on headings */
+h1:hover .anchor,h2:hover .anchor,h3:hover .anchor,
+h4:hover .anchor,h5:hover .anchor,h6:hover .anchor { opacity: 1; }
+.anchor {
+  position: absolute;
+  left: -1.2em;
+  opacity: 0;
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-weight: 400;
+  transition: opacity .2s;
+}
+
+/* ─── Paragraphs ─────────────────────────────────────────────────── */
+p { margin-bottom: 1em; }
+
+/* ─── Links ──────────────────────────────────────────────────────── */
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+
+/* ─── Lists ──────────────────────────────────────────────────────── */
+ul, ol { padding-left: 2em; margin-bottom: 1em; }
+li { margin: .25em 0; }
+li > ul, li > ol { margin: .25em 0; }
+
+/* Task lists */
+ul.contains-task-list { list-style: none; padding-left: 1.2em; }
+li.task-list-item      { padding-left: .25em; }
+li.task-list-item input[type="checkbox"] {
+  margin-right: .5em;
+  accent-color: var(--link);
+}
+
+/* ─── Blockquote ─────────────────────────────────────────────────── */
+blockquote {
+  margin: 1em 0;
+  padding: .75em 1em;
+  border-left: 4px solid var(--quote-border);
+  background: var(--quote-bg);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--fg-muted);
+}
+blockquote p:last-child { margin-bottom: 0; }
+
+/* ─── Code (inline) ──────────────────────────────────────────────── */
+code {
+  font-family: var(--font-mono);
+  font-size: .88em;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: .15em .4em;
+  color: var(--fg);
+}
+
+/* ─── Code blocks ────────────────────────────────────────────────── */
+pre {
+  background: var(--bg-pre);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2em 1.4em;
+  overflow-x: auto;
+  margin: 1em 0;
+  box-shadow: 0 1px 4px var(--shadow);
+  position: relative;
+}
+pre code {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  font-size: .9em;
+  line-height: 1.6;
+  color: var(--fg);
+}
+
+/* Language label */
+pre[class]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: .5em;
+  right: .8em;
+  font-size: .7em;
+  font-family: var(--font-mono);
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+/* ─── Tables ─────────────────────────────────────────────────────── */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-size: .95em;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px var(--shadow);
+}
+th {
+  background: var(--bg-table-h);
+  font-weight: 600;
+  text-align: left;
+  padding: .6em 1em;
+  border-bottom: 2px solid var(--border);
+  color: var(--fg);
+}
+td {
+  padding: .6em 1em;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg);
+}
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: var(--bg-table-b); }
+tr:hover td {
+  background: color-mix(in srgb, var(--link) 8%, transparent);
+}
+
+/* ─── Horizontal rule ────────────────────────────────────────────── */
+hr {
+  border: none;
+  border-top: 2px solid var(--hr);
+  margin: 2em 0;
+}
+
+/* ─── Images ─────────────────────────────────────────────────────── */
+img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  display: block;
+  margin: 1em auto;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+/* ─── kbd / mark / ins / del ─────────────────────────────────────── */
+kbd {
+  font-family: var(--font-mono);
+  font-size: .85em;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: .1em .45em;
+  color: var(--fg);
+}
+mark { background: var(--mark-bg); border-radius: 2px; padding: 0 .2em; }
+ins  { background: var(--ins-bg);  text-decoration: none; border-radius: 2px; padding: 0 .2em; }
+del  { background: var(--del-bg);  color: var(--fg-muted); }
+
+/* ─── Definition lists ───────────────────────────────────────────── */
+dl { margin: 1em 0; }
+dt { font-weight: 700; margin-top: .8em; }
+dd { margin-left: 1.5em; color: var(--fg-muted); }
+
+/* ─── Footnotes ──────────────────────────────────────────────────── */
+.footnotes {
+  font-size: .9em;
+  color: var(--fg-muted);
+  border-top: 1px solid var(--hr);
+  margin-top: 2em;
+  padding-top: 1em;
+}
+.footnotes ol { padding-left: 1.5em; }
+
+/* ─── Print ──────────────────────────────────────────────────────── */
+@media print {
+  body { background: #fff; color: #000; padding: 1cm; }
+  pre, blockquote { border: 1px solid #ccc; }
+  a { color: #000; }
+}
+</style>
+</head>
+<body>
+<div id="content">
+{{CONTENT}}
+</div>
+
+<script>
+// Add anchor links to headings
+document.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(function(h) {
+  var id = h.id || h.textContent.toLowerCase()
+    .replace(/[^\w\s-]/g,'').trim().replace(/\s+/g,'-');
+  if (!h.id) h.id = id;
+  var a = document.createElement('a');
+  a.className = 'anchor';
+  a.href = '#' + id;
+  a.innerHTML = '#';
+  h.prepend(a);
+});
+
+// Add data-lang to <pre> blocks for the language label
+document.querySelectorAll('pre > code[class]').forEach(function(code) {
+  var match = code.className.match(/language-(\w+)/);
+  if (match) code.parentElement.setAttribute('data-lang', match[1]);
+});
+</script>
+</body>
+</html>

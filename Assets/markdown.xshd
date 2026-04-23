@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<SyntaxDefinition name="Markdown" extensions=".md;.markdown"
+  xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+  <Color name="Heading"    foreground="#569CD6" fontWeight="bold"/>
+  <Color name="Bold"       foreground="#E6EDF3" fontWeight="bold"/>
+  <Color name="Italic"     foreground="#CE9178" fontStyle="italic"/>
+  <Color name="Code"       foreground="#CE9178"/>
+  <Color name="CodeBlock"  foreground="#CE9178"/>
+  <Color name="Link"       foreground="#58A6FF"/>
+  <Color name="Image"      foreground="#79C0FF"/>
+  <Color name="ListItem"   foreground="#4D9DE0"/>
+  <Color name="Blockquote" foreground="#8B949E" fontStyle="italic"/>
+  <Color name="HRule"      foreground="#484F58"/>
+  <Color name="HTML"       foreground="#85E89D"/>
+
+  <RuleSet>
+
+    <!-- Fenced code blocks -->
+    <Span color="CodeBlock" multiline="true">
+      <Begin>```</Begin>
+      <End>```</End>
+    </Span>
+    <Span color="CodeBlock" multiline="true">
+      <Begin>~~~</Begin>
+      <End>~~~</End>
+    </Span>
+
+    <!-- Headings: ## Title  (requires space + non-space after hashes) -->
+    <Rule color="Heading">#{1,6} \S.*</Rule>
+
+    <!-- Horizontal rules / setext underlines (3+ chars) -->
+    <Rule color="HRule">-{3,}</Rule>
+    <Rule color="HRule">={3,}</Rule>
+    <Rule color="HRule">\*{3,}</Rule>
+    <Rule color="HRule">_{3,}</Rule>
+
+    <!-- Blockquotes -->
+    <Rule color="Blockquote">&gt;\S.*</Rule>
+
+    <!-- List items -->
+    <Rule color="ListItem">[-*+] \S</Rule>
+    <Rule color="ListItem">[0-9]+\. \S</Rule>
+
+    <!-- Inline HTML tags -->
+    <Rule color="HTML">&lt;[^&gt;]+&gt;</Rule>
+
+    <!-- Images (before link rule) -->
+    <Rule color="Image">!\[[^\]]+\]</Rule>
+
+    <!-- Links -->
+    <Rule color="Link">\[[^\]]+\]</Rule>
+
+    <!-- Bold + italic (*** / ___) -->
+    <Span color="Bold">
+      <Begin>\*\*\*</Begin>
+      <End>\*\*\*</End>
+    </Span>
+    <Span color="Bold">
+      <Begin>___</Begin>
+      <End>___</End>
+    </Span>
+
+    <!-- Bold (** / __) -->
+    <Span color="Bold">
+      <Begin>\*\*</Begin>
+      <End>\*\*</End>
+    </Span>
+    <Span color="Bold">
+      <Begin>__</Begin>
+      <End>__</End>
+    </Span>
+
+    <!-- Italic (* / _) -->
+    <Span color="Italic">
+      <Begin>\*</Begin>
+      <End>\*</End>
+    </Span>
+    <Span color="Italic">
+      <Begin>_</Begin>
+      <End>_</End>
+    </Span>
+
+    <!-- Inline code -->
+    <Span color="Code">
+      <Begin>`</Begin>
+      <End>`</End>
+    </Span>
+
+  </RuleSet>
+</SyntaxDefinition>
