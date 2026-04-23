@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <img src="Icon.png" width="96" alt="MD Viewer logo"/>
 
@@ -37,13 +37,10 @@
 <div align="center">
 
 ### Dark Theme
-![Dark theme preview](https://raw.githubusercontent.com/Hackerprod/MD-Viewer/master/docs/screenshot-dark.png)
+![Dark theme preview](https://raw.githubusercontent.com/Hackerprod/MD-Viewer/master/Assets/screenshot-dark.png)
 
 ### Light Theme
-![Light theme preview](https://raw.githubusercontent.com/Hackerprod/MD-Viewer/master/docs/screenshot-light.png)
-
-### Edit Mode
-![Edit mode](https://raw.githubusercontent.com/Hackerprod/MD-Viewer/master/docs/screenshot-edit.png)
+![Light theme preview](https://raw.githubusercontent.com/Hackerprod/MD-Viewer/master/Assets/screenshot-light.png)
 
 </div>
 
